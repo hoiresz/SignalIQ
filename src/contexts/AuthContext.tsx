@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { apiClient } from '../lib/api';
 import { User, AuthState, UserProfile } from '../types';
 
 interface AuthContextType extends AuthState {
@@ -35,18 +36,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error loading user profile:', error);
-        return;
-      }
-
-      setUserProfile(data);
+      const profile = await apiClient.getUserProfile();
+      setUserProfile(profile);
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
@@ -63,6 +54,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         const user = mapSupabaseUser(session.user);
+        // Set token for API client
+        apiClient.setToken(session.access_token);
         setAuthState({
           user,
           isAuthenticated: true,
@@ -84,6 +77,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       async (event, session) => {
         if (session?.user) {
           const user = mapSupabaseUser(session.user);
+          // Set token for API client
+          apiClient.setToken(session.access_token);
           setAuthState({
             user,
             isAuthenticated: true,
@@ -91,6 +86,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           });
           loadUserProfile(user.id);
         } else {
+          // Clear token from API client
+          apiClient.setToken('');
           setAuthState({
             user: null,
             isAuthenticated: false,
