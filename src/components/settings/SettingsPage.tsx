@@ -3,6 +3,7 @@ import { Globe, Target, Building2, Save, Loader2, Plus, Trash2, Edit3, User, Mai
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserProfile, IdealCustomerProfile } from '../../types';
+import { CompanyWebsiteSection } from './CompanyWebsiteSection';
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
