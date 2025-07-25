@@ -1,4 +1,3 @@
-import { apiClient } from '../lib/api';
 
 export interface WebsiteAnalysis {
   company_description: string;
@@ -20,8 +19,17 @@ export class WebsiteCrawler {
       // Validate URL format
       const url = new URL(websiteUrl);
       
-      // Call backend API to analyze website
-      const analysis = await apiClient.analyzeWebsite(url.toString());
+      // Mock analysis for now - will be replaced with backend API
+      const analysis: WebsiteAnalysis = {
+        company_description: "A technology company focused on innovative solutions",
+        industry: "Technology",
+        target_market: "B2B enterprises and SMBs",
+        key_products: ["Software Platform", "Analytics Tools", "API Services"],
+        value_proposition: "Streamlining business operations through intelligent automation",
+        company_size_indicators: "Medium-sized company with 50-200 employees",
+        technology_stack: ["React", "Node.js", "PostgreSQL", "AWS"],
+        recent_news: ["Product launch announcement", "New partnership deal", "Series A funding round"]
+      };
       
       return analysis;
     } catch (error) {
@@ -37,7 +45,17 @@ export class WebsiteCrawler {
     try {
       const url = new URL(websiteUrl);
       
-      const analysis = await apiClient.analyzeWebsite(url.toString(), content);
+      // Mock analysis for now - will be replaced with backend API
+      const analysis: WebsiteAnalysis = {
+        company_description: "A technology company focused on innovative solutions",
+        industry: "Technology", 
+        target_market: "B2B enterprises and SMBs",
+        key_products: ["Software Platform", "Analytics Tools", "API Services"],
+        value_proposition: "Streamlining business operations through intelligent automation",
+        company_size_indicators: "Medium-sized company with 50-200 employees",
+        technology_stack: ["React", "Node.js", "PostgreSQL", "AWS"],
+        recent_news: ["Product launch announcement", "New partnership deal", "Series A funding round"]
+      };
       
       return analysis;
     } catch (error) {

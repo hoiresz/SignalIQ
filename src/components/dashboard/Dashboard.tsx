@@ -9,9 +9,7 @@ import { SettingsPage } from '../settings/SettingsPage';
 import { Message, Lead, Conversation, User } from '../../types';
 import { generateMockResponse } from '../../utils/mockAI';
 import { exportLeadsToCSV } from '../../utils/csvExport';
-import { supabase } from '../../lib/supabase';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+import { apiClient } from '../../lib/api';
 
 interface ConversationSummary {
   id: string;
@@ -129,8 +127,11 @@ export const Dashboard: React.FC = () => {
     try {
       setIsLoading(true);
 
-      // Generate leads using backend API
-      const aiResponse = await apiClient.generateLeads(content, activeLeadTableId);
+      // Use mock AI response for now
+      const aiResponse = await generateMockResponse(content);
+      
+      // TODO: Store leads in the selected table
+      // This will be implemented when we switch to backend
       
       // Reload table data to show new leads
       await loadLeadTableData(activeLeadTableId);
@@ -144,11 +145,6 @@ export const Dashboard: React.FC = () => {
   };
 
   const loadTableLeads = async (tableId: string) => {
-    if (!BACKEND_URL) {
-      console.warn('Backend URL not configured');
-      return;
-    }
-    
     try {
       const data = await apiClient.getTableLeads(tableId);
       const convertedLeads: Lead[] = data.leads.map((lead: any) => ({

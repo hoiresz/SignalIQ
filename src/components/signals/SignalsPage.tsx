@@ -74,11 +74,30 @@ export const SignalsPage: React.FC = () => {
 
     setIsGenerating(true);
     try {
-      // Generate signals using backend API
-      const generatedSignals = await apiClient.generateAISignals(selectedIcpId);
+      // Mock signal generation for now
+      const mockSignals = [
+        {
+          name: "Companies hiring marketing specialists",
+          description: "Companies posting marketing job openings in the last 3 months",
+          criteria: {
+            signal_description: "Job postings on LinkedIn for marketing roles",
+            company_sizes: ["51-200", "201-500"],
+            information_platforms: ["LinkedIn", "Company Websites"]
+          }
+        },
+        {
+          name: "SaaS companies with recent funding",
+          description: "SaaS companies that raised funding in the last 6 months",
+          criteria: {
+            signal_description: "Recent funding announcements and press releases",
+            funding_stages: ["Series A", "Series B"],
+            information_platforms: ["Crunchbase", "News Articles"]
+          }
+        }
+      ];
       
       // Save generated signals to database
-      const signalsToInsert = generatedSignals.map(signal => ({
+      const signalsToInsert = mockSignals.map(signal => ({
         user_id: user!.id,
         icp_id: selectedIcpId,
         name: signal.name,
@@ -88,8 +107,7 @@ export const SignalsPage: React.FC = () => {
         is_active: true
       }));
 
-      // Note: This still uses Supabase for now, but could be moved to backend API
-      // await apiClient.createLeadSignals(signalsToInsert);
+      // Save to Supabase
       for (const signalData of signalsToInsert) {
         await supabase
           .from('lead_signals')
