@@ -283,33 +283,6 @@ export const SettingsPage: React.FC = () => {
 
         <CompanyWebsiteSection profile={profile} onProfileUpdate={setProfile} onSave={handleSaveProfile} />
       </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Company Website
-            </label>
-            <div className="flex space-x-3">
-              <input
-                type="url"
-                value={profile?.company_website || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, company_website: e.target.value } : prev)}
-                placeholder="https://yourcompany.com"
-                className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-              />
-              <button
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-                className="flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-all duration-200"
-              >
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Ideal Customer Profiles */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6">
