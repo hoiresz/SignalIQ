@@ -13,7 +13,7 @@ interface OnboardingMessage {
 interface OnboardingData {
   companyWebsite: string;
   solutionProducts: string;
-  targetRegion: string;
+  targetCustomers: string;
 }
 
 interface OnboardingFlowProps {
@@ -37,16 +37,16 @@ const CONVERSATION_FLOW = [
   },
   {
     step: 2,
-    question: "Perfect! Now tell me about your solution. What specific products or services are you selling? What problems do you solve for your customers? (Keep it concise - max 250 characters)",
+    question: "Perfect! Now tell me about your solution and products. What specific products or services are you selling? What problems do you solve for your customers?",
     placeholder: "AI-powered analytics software that helps e-commerce companies optimize inventory management and reduce stockouts...",
     field: 'solutionProducts' as keyof OnboardingData,
     maxLength: 250
   },
   {
     step: 3,
-    question: "Excellent! Which regions or locations are you primarily targeting for sales? This helps us find the right prospects in your target markets. (Keep it concise - max 250 characters)",
-    placeholder: "North America (US, Canada), focusing on major metropolitan areas like NYC, SF, Toronto, and expanding to UK and Germany...",
-    field: 'targetRegion' as keyof OnboardingData,
+    question: "Excellent! Now tell me about your target audience. Who are your ideal customers? What types of companies or people do you typically sell to?",
+    placeholder: "Mid-market e-commerce companies with 50-500 employees, particularly those struggling with inventory management, located in North America...",
+    field: 'targetCustomers' as keyof OnboardingData,
     maxLength: 250
   }
 ];
@@ -60,7 +60,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
   const [data, setData] = useState<OnboardingData>({
     companyWebsite: '',
     solutionProducts: '',
-    targetRegion: ''
+    targetCustomers: ''
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -225,8 +225,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
           user_id: user.id,
           name: 'Default Profile',
           solution_products: data.solutionProducts,
-          target_region: data.targetRegion,
-          target_customers: '' // Can be filled later in settings
+          target_customers: data.targetCustomers,
+          target_region: '' // Can be filled later in settings
         });
 
       // Add final success message
