@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import logging
+import os
 
 from app.api.v1 import api_router
 from app.core.config import settings
@@ -43,11 +46,24 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router, prefix="/api")
 
-
-@app.get("/")
-async def root():
-    return {"message": "SignalIQ API is running"}
-
+# Serve static files (built frontend)
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+    
+    @app.get("/")
+    async def serve_frontend():
+        return FileResponse("static/index.html")
+    
+    @app.get("/{path:path}")
+    async def serve_frontend_routes(path: str):
+        # Serve index.html for all frontend routes (SPA routing)
+        if not path.startswith("api") and not path.startswith("static"):
+            return FileResponse("static/index.html")
+        return FileResponse(f"static/{path}")
+else:
+    @app.get("/")
+    async def root():
+        return {"message": "SignalIQ API is running"}
 
 @app.get("/health")
 async def health_check():
