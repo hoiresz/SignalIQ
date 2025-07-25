@@ -318,141 +318,14 @@ export const Dashboard: React.FC = () => {
       {/* Content Area */}
       <div className="flex-1 flex">
         {activeTab === 'leads' && (
-          <>
-            {/* Lead Tables Sidebar */}
-            <div className={`${leadTableSidebarCollapsed ? 'w-16' : 'w-80'} bg-slate-800/30 backdrop-blur-xl border-r border-slate-700/50 flex flex-col transition-all duration-300 relative`}>
-              {/* Lead Tables Header */}
-              <div className="p-6 border-b border-slate-700/50">
-                <div className={`flex items-center ${leadTableSidebarCollapsed ? 'justify-center' : 'justify-between'} mb-4`}>
-                  {!leadTableSidebarCollapsed && (
-                    <h3 className="text-lg font-semibold text-white">Lead Tables</h3>
-                  )}
-                  {!leadTableSidebarCollapsed && (
-                    <button
-                      onClick={handleNewLeadTable}
-                      className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
-                      title="New lead table"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
-                  )}
-                  {leadTableSidebarCollapsed && (
-                    <button
-                      onClick={handleNewLeadTable}
-                      className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
-                      title="New lead table"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-                
-                {/* Collapse Toggle */}
-                <button
-                  onClick={() => setLeadTableSidebarCollapsed(!leadTableSidebarCollapsed)}
-                  className="absolute -right-3 top-8 w-6 h-6 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center transition-colors border border-slate-600"
-                >
-                  <ChevronRight className={`w-3 h-3 text-slate-300 transition-transform duration-300 ${leadTableSidebarCollapsed ? '' : 'rotate-180'}`} />
-                </button>
-              </div>
-
-              {/* Lead Tables List */}
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="space-y-2">
-                  {leadTables.map((table) => (
-                    <button
-                      key={table.id}
-                      onClick={() => handleLeadTableSelect(table.id)}
-                      className={`w-full text-left ${leadTableSidebarCollapsed ? 'p-2' : 'p-3'} rounded-xl border transition-all duration-200 ${
-                        activeLeadTableId === table.id
-                          ? 'bg-blue-500/20 border-blue-500/30 text-white shadow-lg'
-                          : 'bg-slate-700/20 border-slate-600/30 text-slate-300 hover:bg-slate-700/30 hover:text-white'
-                      }`}
-                    >
-                      {leadTableSidebarCollapsed ? (
-                        <div className="flex flex-col items-center">
-                          <Database className={`w-5 h-5 mb-1 ${
-                            activeLeadTableId === table.id ? 'text-blue-400' : 'text-slate-400'
-                          }`} />
-                          <div className="text-xs text-center">
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                              activeLeadTableId === table.id ? 'bg-blue-500 text-white' : 'bg-slate-600 text-slate-300'
-                            }`}>
-                              {table.lead_count || 0}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center">
-                              <Database className={`w-4 h-4 mr-2 flex-shrink-0 ${
-                                activeLeadTableId === table.id ? 'text-blue-400' : 'text-slate-400'
-                              }`} />
-                              <h4 className="text-sm font-medium truncate">
-                                {table.name}
-                              </h4>
-                            </div>
-                            
-                            <div className="mt-2 flex items-center space-x-4 text-xs text-slate-400">
-                              <span className="flex items-center">
-                                <Database className="w-3 h-3 mr-1" />
-                                {table.lead_count || 0} leads
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col items-end ml-2">
-                            <span className="text-xs text-slate-400">
-                              {formatDate(table.updated_at)}
-                            </span>
-                            {activeLeadTableId === table.id && (
-                              <ChevronRight className="w-3 h-3 text-blue-400 mt-1" />
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <div className="flex-1 flex flex-col bg-white">
+            <div className="flex-1 overflow-hidden">
+              <LeadsTable 
+                leads={conversation.leads}
+                onExportCSV={handleExportCSV}
+              />
             </div>
-
-            {/* Chat Sidebar */}
-            <div className={`${leadTableSidebarCollapsed ? 'w-96' : 'w-96'} bg-slate-800/20 backdrop-blur-xl border-r border-slate-700/50 flex flex-col`}>
-              {/* Chat History */}
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="space-y-4">
-                  <div className="text-center py-8">
-                    <Database className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-white mb-2">Lead Generation</h3>
-                    <p className="text-slate-400 text-sm">
-                      Ask me to find companies or people that match your criteria
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Chat Input */}
-              <div className="p-4 border-t border-slate-700/50">
-                <ChatInput 
-                  onSendMessage={handleSendMessage}
-                  isLoading={isLoading}
-                  placeholder="Find companies in fintech with Series A funding..."
-                />
-              </div>
-            </div>
-
-            {/* Main Content - Leads Table */}
-            <div className="flex-1 flex flex-col bg-white">
-              <div className="flex-1 overflow-hidden">
-                <LeadsTable 
-                  leads={conversation.leads}
-                  onExportCSV={handleExportCSV}
-                />
-              </div>
-            </div>
-          </>
+          </div>
         )}
 
         {activeTab === 'settings' && (
