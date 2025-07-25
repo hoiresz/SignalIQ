@@ -165,9 +165,20 @@ class ApiClient {
   }
 
   async generateAISignals(icpId: string): Promise<LeadSignal[]> {
-    return this.request<LeadSignal[]>('/lead-signals/generate', {
+    return this.request<LeadSignal[]>('/signals/generate', {
       method: 'POST',
-      body: JSON.stringify({ icp_id: icpId }),
+      body: JSON.stringify({ icp_id: icpId })
+    });
+  }
+
+  // Website Analysis
+  async analyzeWebsite(websiteUrl: string, websiteContent?: string): Promise<any> {
+    return this.request('/analysis/website', {
+      method: 'POST',
+      body: JSON.stringify({
+        website_url: websiteUrl,
+        website_content: websiteContent
+      })
     });
   }
 }

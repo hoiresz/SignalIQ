@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Brain, User, Bot, Loader2, CheckCircle, Sparkles, Globe } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { apiClient } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { WebsiteCrawler } from '../../utils/websiteCrawler';
 
 interface OnboardingMessage {
   id: string;
@@ -207,27 +208,50 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
         content: "Perfect! I have all the information I need. Let me set up your profile now..."
       });
 
+      // Analyze website if provided
+      let websiteAnalysis = null;
+      if (data.companyWebsite) {
+        try {
+          addMessage({
+            type: 'assistant',
+            content: "Analyzing your website to better understand your business..."
+          });
+          
+          websiteAnalysis = await WebsiteCrawler.crawlWebsite(data.companyWebsite);
+          
+          addMessage({
+            type: 'assistant',
+            content: `Great! I've analyzed ${WebsiteCrawler.extractDomain(data.companyWebsite)} and learned about your ${websiteAnalysis.industry} business.`
+          });
+        } catch (error) {
+          console.error('Website analysis failed:', error);
+          addMessage({
+            type: 'assistant',
+            content: "I couldn't analyze your website, but that's okay. I'll use the information you provided."
+          });
+        }
+      }
+
       // Save user profile
-      await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: user.id,
-          company_website: data.companyWebsite,
-          onboarding_completed: true
-        }, {
-          onConflict: 'user_id'
-        });
+      await apiClient.updateUserProfile({
+        company_website: data.companyWebsite,
+        onboarding_completed: true
+      });
 
       // Save ideal customer profile
-      await supabase
-        .from('ideal_customer_profiles')
-        .insert({
-          user_id: user.id,
-          name: 'Default Profile',
-          solution_products: data.solutionProducts,
-          target_customers: data.targetCustomers,
-          target_region: '' // Can be filled later in settings
-        });
+      const icpData = {
+        name: 'Default Profile',
+        solution_products: data.solutionProducts,
+        target_customers: data.targetCustomers,
+        target_region: '',
+        // Include website analysis data if available
+        ...(websiteAnalysis && {
+          company_info: websiteAnalysis.company_description,
+          solution_products: `${data.solutionProducts}\n\nFrom website analysis: ${websiteAnalysis.value_proposition}`,
+        })
+      };
+      
+      await apiClient.createICPProfile(icpData);
 
       // Add final success message
       setTimeout(() => {

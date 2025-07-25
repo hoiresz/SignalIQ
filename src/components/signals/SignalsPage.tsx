@@ -74,62 +74,11 @@ export const SignalsPage: React.FC = () => {
 
     setIsGenerating(true);
     try {
-      const selectedIcp = icpProfiles.find(icp => icp.id === selectedIcpId);
-      if (!selectedIcp) return;
-
-      // Mock AI generation - in real implementation, this would call OpenAI
-      const mockSignals = [
-        {
-          name: "Companies hiring marketing specialists",
-          description: "Companies posting job openings for marketing specialists with AI focus on LinkedIn",
-          criteria: {
-            company_sizes: ["51-200", "201-500"],
-            funding_stages: ["Series A", "Series B"],
-            information_platforms: ["LinkedIn", "Job Boards"],
-            signal_description: "Job postings on LinkedIn for 'Marketing Specialist', 'AI Marketing', or 'Growth Marketing' roles"
-          }
-        },
-        {
-          name: "Recent funding announcements",
-          description: "Companies that announced Series A or B funding in the last 6 months",
-          criteria: {
-            funding_stages: ["Series A", "Series B"],
-            information_platforms: ["Crunchbase", "Press Releases", "News Articles"],
-            signal_description: "Recent funding announcements with focus on " + selectedIcp.company_info
-          }
-        },
-        {
-          name: "Technology adoption pain points",
-          description: "Companies mentioning challenges with current solutions on social media",
-          criteria: {
-            company_sizes: ["11-50", "51-200"],
-            information_platforms: ["Twitter/X", "Reddit", "Industry Forums"],
-            signal_description: "Social media mentions of pain points related to " + selectedIcp.company_info
-          }
-        },
-        {
-          name: "Executive team changes",
-          description: "Companies with new C-level hires in relevant departments",
-          criteria: {
-            company_sizes: ["201-500", "501-1000"],
-            funding_stages: ["Series B", "Series C"],
-            information_platforms: ["LinkedIn", "Press Releases"],
-            target_people_criteria: "New CEOs, CTOs, CMOs, VPs hired in the last 90 days",
-            signal_description: "Leadership changes that might indicate new strategic initiatives"
-          }
-        },
-        {
-          name: "Product launch indicators",
-          description: "Companies announcing new products or features that complement your solution",
-          criteria: {
-            information_platforms: ["Product Hunt", "Company Websites", "Press Releases"],
-            signal_description: "Product launches that create opportunities for " + selectedIcp.company_info
-          }
-        }
-      ];
-
-      // Save generated signals
-      const signalsToInsert = mockSignals.map(signal => ({
+      // Generate signals using backend API
+      const generatedSignals = await apiClient.generateAISignals(selectedIcpId);
+      
+      // Save generated signals to database
+      const signalsToInsert = generatedSignals.map(signal => ({
         user_id: user!.id,
         icp_id: selectedIcpId,
         name: signal.name,
@@ -139,9 +88,13 @@ export const SignalsPage: React.FC = () => {
         is_active: true
       }));
 
-      await supabase
-        .from('lead_signals')
-        .insert(signalsToInsert);
+      // Note: This still uses Supabase for now, but could be moved to backend API
+      // await apiClient.createLeadSignals(signalsToInsert);
+      for (const signalData of signalsToInsert) {
+        await supabase
+          .from('lead_signals')
+          .insert(signalData);
+      }
 
       await loadData();
     } catch (error) {
