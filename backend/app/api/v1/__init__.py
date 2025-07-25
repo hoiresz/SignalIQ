@@ -1,12 +1,13 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import leads, health, auth, conversations, users, analysis, signals
+from app.api.v1.endpoints import leads, health, auth, conversations, users, analysis, signals, lead_tables
 
 api_router = APIRouter(prefix="/v1")
 
 api_router.include_router(health.router, prefix="/health", tags=["health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(leads.router, prefix="/leads", tags=["leads"])
+api_router.include_router(lead_tables.router, prefix="/lead-tables", tags=["lead-tables"])
 api_router.include_router(conversations.router, prefix="/conversations", tags=["conversations"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(analysis.router, prefix="/analysis", tags=["analysis"])

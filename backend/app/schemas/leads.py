@@ -10,8 +10,7 @@ class LeadData(BaseModel):
 
 class LeadGenerationRequest(BaseModel):
     query: str
-    conversation_id: str
-    user_id: str
+    lead_table_id: str
 
 
 class StoredLead(BaseModel):

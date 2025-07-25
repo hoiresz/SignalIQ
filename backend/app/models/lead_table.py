@@ -12,7 +12,7 @@ class LeadTable(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=True, index=True)
+    conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -20,7 +20,7 @@ class LeadTable(Base):
 
     # Relationships
     user = relationship("User", back_populates="lead_tables")
-    conversation = relationship("Conversation")
+    conversation = relationship("Conversation", foreign_keys=[conversation_id])
     columns = relationship("LeadColumn", back_populates="lead_table", cascade="all, delete-orphan")
     rows = relationship("LeadRow", back_populates="lead_table", cascade="all, delete-orphan")
 

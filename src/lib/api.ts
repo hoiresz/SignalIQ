@@ -54,19 +54,47 @@ class ApiClient {
   }
 
   // Lead generation endpoints
-  async generateLeads(query: string, conversationId: string, userId: string) {
+  async generateLeads(query: string, leadTableId: string) {
     return this.request('/leads/generate', {
       method: 'POST',
       body: JSON.stringify({
         query,
-        conversation_id: conversationId,
-        user_id: userId,
+        lead_table_id: leadTableId,
       }),
     });
   }
 
-  async getConversationLeads(conversationId: string) {
-    return this.request(`/leads/conversations/${conversationId}`);
+  async getTableLeads(tableId: string) {
+    return this.request(`/leads/tables/${tableId}`);
+  }
+
+  // Lead Tables endpoints
+  async getLeadTables(): Promise<any[]> {
+    return this.request<any[]>('/lead-tables');
+  }
+
+  async createLeadTable(name: string, description?: string): Promise<any> {
+    return this.request('/lead-tables', {
+      method: 'POST',
+      body: JSON.stringify({ name, description }),
+    });
+  }
+
+  async getLeadTable(id: string): Promise<any> {
+    return this.request(`/lead-tables/${id}`);
+  }
+
+  async updateLeadTable(id: string, data: { name?: string; description?: string }): Promise<any> {
+    return this.request(`/lead-tables/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteLeadTable(id: string): Promise<void> {
+    return this.request(`/lead-tables/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   // Conversation endpoints
