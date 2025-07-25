@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, LogOut, MessageCircle, Database, Plus, Clock, ChevronRight, Settings, Users, Zap, Target } from 'lucide-react';
+import { Brain, LogOut, MessageCircle, Database, Plus, Clock, ChevronRight, Settings, Users, Zap, Target, Download } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ChatMessage } from '../chat/ChatMessage';
 import { ChatInput } from '../chat/ChatInput';
@@ -318,7 +318,48 @@ export const Dashboard: React.FC = () => {
       {/* Content Area */}
       <div className="flex-1 flex">
         {activeTab === 'leads' && (
-          <div className="flex-1 flex flex-col bg-white">
+          <div className="flex-1 flex flex-col bg-white overflow-hidden">
+            {/* Top Navigation Bar for Lead Tables */}
+            <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <h2 className="text-lg font-semibold text-gray-900">Lead Tables</h2>
+                  <div className="flex items-center space-x-3">
+                    <select
+                      value={activeLeadTableId}
+                      onChange={(e) => handleLeadTableSelect(e.target.value)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm font-medium min-w-[200px]"
+                    >
+                      {leadTables.map((table) => (
+                        <option key={table.id} value={table.id}>
+                          {table.name} ({conversation.leads.length} leads)
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleNewLeadTable}
+                      className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Table
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-600">
+                    {conversation.leads.length} leads
+                  </span>
+                  <button
+                    onClick={handleExportCSV}
+                    className="flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors text-sm"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+            
             <div className="flex-1 overflow-hidden">
               <LeadsTable 
                 leads={conversation.leads}

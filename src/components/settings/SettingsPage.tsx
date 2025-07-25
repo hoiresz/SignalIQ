@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Target, Building2, Save, Loader2, Plus, Trash2, Edit3, User, Mail } from 'lucide-react';
+import { Globe, Target, Building2, Save, Loader2, Plus, Trash2, Edit3, User, Mail, Pencil, X, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserProfile, IdealCustomerProfile } from '../../types';
@@ -281,7 +281,8 @@ export const SettingsPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-slate-900">Company Information</h2>
         </div>
 
-        <div className="space-y-4">
+        <CompanyWebsiteSection profile={profile} onProfileUpdate={setProfile} onSave={handleSaveProfile} />
+      </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Company Website
