@@ -51,6 +51,26 @@ export const Dashboard: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showNewTablePanel, setShowNewTablePanel] = useState(false);
 
+  // Get display name based on table type
+  const getDisplayName = (type: 'companies' | 'people' | 'custom', isPlural: boolean = true) => {
+    switch (type) {
+      case 'companies':
+        return isPlural ? 'companies' : 'company';
+      case 'people':
+        return isPlural ? 'people' : 'person';
+      case 'custom':
+        return isPlural ? 'results' : 'result';
+      default:
+        return isPlural ? 'results' : 'result';
+    }
+  };
+
+  // Get current table type
+  const getCurrentTableType = (): 'companies' | 'people' | 'custom' => {
+    const currentTable = leadTables.find(table => table.id === activeLeadTableId);
+    return (currentTable?.table_type as 'companies' | 'people' | 'custom') || 'companies';
+  };
+
   useEffect(() => {
     if (user) {
       initializeLeadTables();
@@ -248,7 +268,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const navItems = [
-    { id: 'leads' as ActiveTab, label: 'Leads', icon: Database, description: 'Manage your leads' },
+    { id: 'leads' as ActiveTab, label: 'Datasets', icon: Database, description: 'Manage your data' },
     { id: 'signals' as ActiveTab, label: 'Signals', icon: Zap, description: 'Lead signal management' },
     { id: 'settings' as ActiveTab, label: 'Settings', icon: Settings, description: 'Account & ICP settings' },
     { id: 'campaigns' as ActiveTab, label: 'Campaigns', icon: Target, description: 'Coming soon...', disabled: true },
@@ -336,11 +356,11 @@ export const Dashboard: React.FC = () => {
       <div className="flex-1 flex">
         {activeTab === 'leads' && (
           <div className="flex-1 flex flex-col bg-white overflow-hidden">
-            {/* Top Navigation Bar for Lead Tables */}
+            {/* Top Navigation Bar for Data Tables */}
             <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Lead Tables</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Data Tables</h2>
                   <div className="flex items-center space-x-3">
                     <select
                       value={activeLeadTableId}
@@ -349,7 +369,7 @@ export const Dashboard: React.FC = () => {
                     >
                       {leadTables.map((table) => (
                         <option key={table.id} value={table.id}>
-                          {table.name} - {table.table_type || 'companies'} ({conversation.leads.length} leads)
+                          {table.name} - {table.table_type || 'companies'} ({conversation.leads.length} {getDisplayName(table.table_type || 'companies', conversation.leads.length !== 1)})
                         </option>
                       ))}
                     </select>
@@ -364,7 +384,7 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-600">
-                    {conversation.leads.length} leads
+                    {conversation.leads.length} {getDisplayName(getCurrentTableType(), conversation.leads.length !== 1)}
                   </span>
                   <button
                     onClick={handleExportCSV}
@@ -381,6 +401,7 @@ export const Dashboard: React.FC = () => {
               <LeadsTable 
                 leads={conversation.leads}
                 onExportCSV={handleExportCSV}
+                tableType={getCurrentTableType()}
               />
             </div>
           </div>
