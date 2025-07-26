@@ -129,6 +129,62 @@ class ApiClient {
   }
 
   async createLeadTable(name: string, description?: string, tableType?: 'companies' | 'people' | 'custom'): Promise<any> {
+  async createLeadTableWithEnrichments(name: string, description: string, tableType: 'companies' | 'people' | 'custom', enrichments: string[]): Promise<any> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      // Define base columns for each type
+      const baseColumns = {
+        companies: ['Company Name', 'Website', 'Description'],
+        people: ['Name', 'Job Title', 'Company'],
+        custom: ['Name', 'Description', 'URL']
+      };
+
+      // Combine base columns with selected enrichments
+      const allColumns = [...baseColumns[tableType], ...enrichments];
+
+      // Create the lead table
+      const { data: table, error: tableError } = await supabase
+        .from('lead_tables')
+        .insert({
+          user_id: user.id,
+          name,
+          description,
+          table_type: tableType,
+          default_columns: allColumns.map((col, index) => ({
+            name: col,
+            type: 'text',
+            order: index
+          }))
+        })
+        .select()
+        .single();
+
+      if (tableError) throw tableError;
+
+      // Create columns in lead_columns table
+      const columnsToInsert = allColumns.map((columnName, index) => ({
+        lead_table_id: table.id,
+        name: columnName,
+        column_type: 'text',
+        display_order: index
+      }));
+
+      const { error: columnsError } = await supabase
+        .from('lead_columns')
+        .insert(columnsToInsert);
+
+      if (columnsError) throw columnsError;
+
+      return table;
+    } catch (error) {
+      console.error('Error creating lead table with enrichments:', error);
+      throw error;
+    }
+  }
+
+  async createLeadTable(name: string, description?: string, tableType?: 'companies' | 'people' | 'custom'): Promise<any> {
     // If tableType is provided, use the new method
     if (tableType) {
       return this.createLeadTableWithType(name, description || '', tableType);
