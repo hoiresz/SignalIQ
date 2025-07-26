@@ -13,6 +13,13 @@ class SignalType(str, enum.Enum):
     CUSTOM = "custom"
 
 
+class SignalStatus(str, enum.Enum):
+    """Signal status enumeration"""
+    DEPLOYED = "deployed"
+    SEARCHING = "searching"
+    COMPLETED = "completed"
+
+
 class LeadSignal(Base):
     """Signal model - defines criteria for identifying potential prospects"""
     __tablename__ = "lead_signals"
@@ -23,6 +30,7 @@ class LeadSignal(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     signal_type = Column(Enum(SignalType), default=SignalType.CUSTOM, nullable=False, index=True)
+    status = Column(Enum(SignalStatus), default=SignalStatus.DEPLOYED, nullable=False, index=True)
     criteria = Column(JSONB, default={}, nullable=True)
     is_active = Column(Boolean, default=True, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -33,4 +41,4 @@ class LeadSignal(Base):
     icp = relationship("IdealCustomerProfile", back_populates="signals")
 
     def __repr__(self):
-        return f"<Signal(id={self.id}, name={self.name}, signal_type={self.signal_type})>"
+        return f"<Signal(id={self.id}, name={self.name}, signal_type={self.signal_type}, status={self.status})>"

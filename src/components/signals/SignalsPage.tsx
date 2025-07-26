@@ -1,37 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Plus, Trash2, Edit3, Loader2, Save, X, Sparkles, Target, Building2, Users, DollarSign, MapPin, User, Globe, Lightbulb, Search, ArrowLeft } from 'lucide-react';
+import { Zap, Plus, Trash2, Edit3, Loader2, Save, X, Sparkles, Target, Building2, Users, DollarSign, MapPin, User, Globe, Lightbulb, Search, ArrowLeft, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { LeadSignal, IdealCustomerProfile } from '../../types';
 
-const COMPANY_SIZES = [
-  '1-10', '11-50', '51-200', '201-500', '501-1000',
-  '1001-5000', '5001-10000', '10001+'
-];
-
-const FUNDING_STAGES = [
-  'Pre-seed', 'Seed', 'Series A', 'Series B', 'Series C',
-  'Series D+', 'IPO/Public', 'Bootstrapped'
-];
-
-const INFORMATION_PLATFORMS = [
-  'LinkedIn', 'Twitter/X', 'Reddit', 'Company Websites', 'Job Boards',
-  'News Articles', 'Press Releases', 'Crunchbase', 'AngelList', 'GitHub',
-  'Product Hunt', 'Industry Forums', 'Podcasts', 'Webinars', 'Conference Speakers'
+const MOCK_GENERATED_CRITERIA = [
+  "posted on LinkedIn about SEO",
+  "has job positions open on their website", 
+  "company is located in the US",
+  "mentioned AI or automation in recent posts",
+  "has raised funding in the last 12 months",
+  "hiring for engineering roles",
+  "attended recent industry conferences",
+  "published content about digital transformation"
 ];
 
 export const SignalsPage: React.FC = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [showGeneratePanel, setShowGeneratePanel] = useState(false);
   const [signals, setSignals] = useState<LeadSignal[]>([]);
   const [icpProfiles, setIcpProfiles] = useState<IdealCustomerProfile[]>([]);
   const [editingSignal, setEditingSignal] = useState<LeadSignal | null>(null);
   const [showNewSignalForm, setShowNewSignalForm] = useState(false);
   const [selectedIcpId, setSelectedIcpId] = useState<string>('');
-  const [generatedCriteria, setGeneratedCriteria] = useState<string[]>([]);
+  const [selectedCriteria, setSelectedCriteria] = useState<string[]>([]);
+  const [customCriteria, setCustomCriteria] = useState<string[]>([]);
+  const [newCriteriaInput, setNewCriteriaInput] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -71,23 +67,65 @@ export const SignalsPage: React.FC = () => {
     }
   };
 
-  const generateAISignals = async () => {
+  const handleGenerateSignals = () => {
     if (!selectedIcpId) return;
-
-    // Generate mock criteria
-    const mockCriteria = [
-      "posted on LinkedIn about SEO",
-      "has job positions open on their website", 
-      "company is located in the US",
-      "mentioned AI or automation in recent posts",
-      "has raised funding in the last 12 months",
-      "hiring for engineering roles",
-      "attended recent industry conferences",
-      "published content about digital transformation"
-    ];
-    
-    setGeneratedCriteria(mockCriteria);
+    setSelectedCriteria([]);
+    setCustomCriteria([]);
+    setNewCriteriaInput('');
     setShowGeneratePanel(true);
+  };
+
+  const toggleCriteriaSelection = (criteria: string) => {
+    setSelectedCriteria(prev => 
+      prev.includes(criteria)
+        ? prev.filter(c => c !== criteria)
+        : [...prev, criteria]
+    );
+  };
+
+  const addCustomCriteria = () => {
+    if (newCriteriaInput.trim() && !customCriteria.includes(newCriteriaInput.trim())) {
+      setCustomCriteria(prev => [...prev, newCriteriaInput.trim()]);
+      setNewCriteriaInput('');
+    }
+  };
+
+  const removeCustomCriteria = (criteria: string) => {
+    setCustomCriteria(prev => prev.filter(c => c !== criteria));
+  };
+
+  const handleCreateSignal = async () => {
+    if (!selectedIcpId || (selectedCriteria.length === 0 && customCriteria.length === 0)) return;
+
+    setIsSaving(true);
+    try {
+      const allCriteria = [...selectedCriteria, ...customCriteria];
+      const signalName = `Signal - ${allCriteria.slice(0, 2).join(', ')}${allCriteria.length > 2 ? '...' : ''}`;
+
+      await supabase
+        .from('lead_signals')
+        .insert({
+          user_id: user.id,
+          icp_id: selectedIcpId,
+          name: signalName,
+          description: `Auto-generated signal with ${allCriteria.length} criteria`,
+          signal_type: 'ai_generated',
+          status: 'deployed',
+          criteria: {
+            signal_criteria: allCriteria
+          },
+          is_active: true
+        });
+
+      await loadData();
+      setShowGeneratePanel(false);
+      setSelectedCriteria([]);
+      setCustomCriteria([]);
+    } catch (error) {
+      console.error('Error creating signal:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSaveSignal = async (signal: Partial<LeadSignal>) => {
@@ -103,7 +141,8 @@ export const SignalsPage: React.FC = () => {
             name: signal.name,
             description: signal.description,
             criteria: signal.criteria,
-            is_active: signal.is_active
+            is_active: signal.is_active,
+            status: signal.status || 'deployed'
           })
           .eq('id', signal.id);
       } else {
@@ -116,6 +155,7 @@ export const SignalsPage: React.FC = () => {
             name: signal.name,
             description: signal.description || '',
             signal_type: 'custom',
+            status: 'deployed',
             criteria: signal.criteria || {},
             is_active: signal.is_active ?? true
           });
@@ -159,6 +199,32 @@ export const SignalsPage: React.FC = () => {
     }
   };
 
+  const updateSignalStatus = async (signalId: string, status: 'deployed' | 'searching' | 'completed') => {
+    try {
+      await supabase
+        .from('lead_signals')
+        .update({ status })
+        .eq('id', signalId);
+
+      await loadData();
+    } catch (error) {
+      console.error('Error updating signal status:', error);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'deployed':
+        return 'bg-green-100 text-green-800';
+      case 'searching':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const SignalForm: React.FC<{
     signal: Partial<LeadSignal>;
     onSave: (signal: Partial<LeadSignal>) => void;
@@ -166,26 +232,9 @@ export const SignalsPage: React.FC = () => {
   }> = ({ signal, onSave, onCancel }) => {
     const [formData, setFormData] = useState<Partial<LeadSignal>>({
       ...signal,
-      criteria: signal.criteria || {}
+      criteria: signal.criteria || {},
+      status: signal.status || 'deployed'
     });
-
-    const updateCriteria = (key: string, value: any) => {
-      setFormData(prev => ({
-        ...prev,
-        criteria: {
-          ...prev.criteria,
-          [key]: value
-        }
-      }));
-    };
-
-    const toggleArrayValue = (key: string, value: string) => {
-      const current = formData.criteria?.[key] || [];
-      const updated = current.includes(value)
-        ? current.filter((item: string) => item !== value)
-        : [...current, value];
-      updateCriteria(key, updated);
-    };
 
     return (
       <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-6 space-y-6 border border-slate-200 shadow-md">
@@ -193,126 +242,49 @@ export const SignalsPage: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-900 mb-1">
             {signal.id ? 'Edit Signal' : 'Create New Signal'}
           </h3>
-          <p className="text-slate-600 text-sm">Define the criteria for identifying potential leads</p>
+          <p className="text-slate-600 text-sm">Define the criteria for identifying potential prospects</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Signal Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Companies hiring marketing specialists"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Description
-              </label>
-              <textarea
-                value={formData.description || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe what this signal identifies and why it's valuable..."
-                rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none bg-white shadow-sm text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Target People Criteria
-              </label>
-              <textarea
-                value={formData.criteria?.target_people_criteria || ''}
-                onChange={(e) => updateCriteria('target_people_criteria', e.target.value)}
-                placeholder="e.g., CEOs, CTOs, VP of Engineering, Marketing Directors, Decision makers in technology adoption..."
-                rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none bg-white shadow-sm text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Signal Description *
-              </label>
-              <textarea
-                value={formData.criteria?.signal_description || ''}
-                onChange={(e) => updateCriteria('signal_description', e.target.value)}
-                placeholder="e.g., Companies posting job openings for marketing roles on LinkedIn, mentions of pain points on social media, recent funding announcements..."
-                rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none bg-white shadow-sm text-sm"
-              />
-            </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Signal Name *
+            </label>
+            <input
+              type="text"
+              value={formData.name || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., Companies hiring marketing specialists"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm text-sm"
+            />
           </div>
 
-          {/* Criteria Filters */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                <Building2 className="w-4 h-4 mr-2 text-blue-600" />
-                Company Sizes
-              </label>
-              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-3 bg-white">
-                {COMPANY_SIZES.map((size) => (
-                  <label key={size} className="flex items-center hover:bg-slate-50 p-1 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={formData.criteria?.company_sizes?.includes(size) || false}
-                      onChange={() => toggleArrayValue('company_sizes', size)}
-                      className="mr-2 rounded text-blue-500 focus:ring-blue-500"
-                    />
-                    <span className="text-xs font-medium text-slate-700">{size}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Description
+            </label>
+            <textarea
+              value={formData.description || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Describe what this signal identifies and why it's valuable..."
+              rows={3}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none bg-white shadow-sm text-sm"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                <DollarSign className="w-4 h-4 mr-2 text-emerald-600" />
-                Funding Stages
-              </label>
-              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-3 bg-white">
-                {FUNDING_STAGES.map((stage) => (
-                  <label key={stage} className="flex items-center hover:bg-slate-50 p-1 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={formData.criteria?.funding_stages?.includes(stage) || false}
-                      onChange={() => toggleArrayValue('funding_stages', stage)}
-                      className="mr-2 rounded text-emerald-500 focus:ring-emerald-500"
-                    />
-                    <span className="text-xs font-medium text-slate-700">{stage}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                <Globe className="w-4 h-4 mr-2 text-purple-600" />
-                Information Platforms
-              </label>
-              <div className="grid grid-cols-1 gap-1 max-h-40 overflow-y-auto border border-slate-200 rounded-lg p-3 bg-white">
-                {INFORMATION_PLATFORMS.map((platform) => (
-                  <label key={platform} className="flex items-center hover:bg-slate-50 p-1 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={formData.criteria?.information_platforms?.includes(platform) || false}
-                      onChange={() => toggleArrayValue('information_platforms', platform)}
-                      className="mr-2 rounded text-purple-500 focus:ring-purple-500"
-                    />
-                    <span className="text-xs font-medium text-slate-700">{platform}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Status
+            </label>
+            <select
+              value={formData.status || 'deployed'}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'deployed' | 'searching' | 'completed' }))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm text-sm"
+            >
+              <option value="deployed">Deployed</option>
+              <option value="searching">Searching</option>
+              <option value="completed">Completed</option>
+            </select>
           </div>
         </div>
 
@@ -325,7 +297,7 @@ export const SignalsPage: React.FC = () => {
           </button>
           <button
             onClick={() => onSave(formData)}
-            disabled={isSaving || !formData.name?.trim() || !formData.criteria?.signal_description?.trim()}
+            disabled={isSaving || !formData.name?.trim()}
             className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-lg font-medium transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg text-sm"
           >
             {isSaving ? (
@@ -388,7 +360,7 @@ export const SignalsPage: React.FC = () => {
               ))}
             </select>
             <button
-              onClick={generateAISignals}
+              onClick={handleGenerateSignals}
               disabled={!selectedIcpId}
               className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
             >
@@ -416,15 +388,24 @@ export const SignalsPage: React.FC = () => {
                     <div>
                       <span className="font-semibold text-slate-700 block mb-2">Target Region:</span>
                       <div className="flex flex-wrap gap-2 max-w-md">
-                        {selectedIcp.target_region.slice(0, 3).map((country) => (
-                          <span key={country} className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-md text-sm font-medium">
-                            {country}
-                          </span>
-                        ))}
-                        {Array.isArray(selectedIcp.target_region) && selectedIcp.target_region.length > 3 && (
-                          <span className="text-slate-500 text-sm">
-                            ... +{selectedIcp.target_region.length - 3} more
-                          </span>
+                        {Array.isArray(selectedIcp.target_region) ? (
+                          <>
+                            {selectedIcp.target_region.slice(0, 3).map((country) => (
+                              <span
+                                key={country}
+                                className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-md text-sm font-medium"
+                              >
+                                {country}
+                              </span>
+                            ))}
+                            {selectedIcp.target_region.length > 3 && (
+                              <span className="text-slate-500 text-sm">
+                                ... +{selectedIcp.target_region.length - 3} more
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-slate-600">{selectedIcp.target_region}</span>
                         )}
                       </div>
                     </div>
@@ -501,6 +482,15 @@ export const SignalsPage: React.FC = () => {
                                 </>
                               )}
                             </span>
+                            <select
+                              value={signal.status || 'deployed'}
+                              onChange={(e) => updateSignalStatus(signal.id, e.target.value as 'deployed' | 'searching' | 'completed')}
+                              className={`px-3 py-1 rounded-full text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(signal.status || 'deployed')}`}
+                            >
+                              <option value="deployed">Deployed</option>
+                              <option value="searching">Searching</option>
+                              <option value="completed">Completed</option>
+                            </select>
                             <label className="flex items-center cursor-pointer">
                               <input
                                 type="checkbox"
@@ -534,79 +524,25 @@ export const SignalsPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Signal Description */}
-                    {signal.criteria?.signal_description && (
+                    {/* Signal Criteria */}
+                    {signal.criteria?.signal_criteria && Array.isArray(signal.criteria.signal_criteria) && (
                       <div className="mb-6 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-200">
-                        <div className="flex items-center mb-1">
+                        <div className="flex items-center mb-3">
                           <Zap className="w-5 h-5 text-orange-600 mr-2" />
-                          <span className="font-semibold text-slate-700">Signal Details</span>
+                          <span className="font-semibold text-slate-700">Signal Criteria</span>
                         </div>
-                        <p className="text-slate-600 leading-relaxed">{signal.criteria.signal_description}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {signal.criteria.signal_criteria.map((criteria, index) => (
+                            <span
+                              key={index}
+                              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-medium"
+                            >
+                              {criteria}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
-
-                    {/* Criteria Display */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      {signal.criteria?.company_sizes && signal.criteria.company_sizes.length > 0 && (
-                        <div>
-                          <div className="flex items-center mb-2">
-                            <Building2 className="w-5 h-5 text-blue-600 mr-2" />
-                            <span className="font-semibold text-slate-700">Company Sizes</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {signal.criteria.company_sizes.map((size) => (
-                              <span key={size} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm font-medium">
-                                {size}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {signal.criteria?.funding_stages && signal.criteria.funding_stages.length > 0 && (
-                        <div>
-                          <div className="flex items-center mb-2">
-                            <DollarSign className="w-5 h-5 text-emerald-600 mr-2" />
-                            <span className="font-semibold text-slate-700">Funding Stages</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {signal.criteria.funding_stages.map((stage) => (
-                              <span key={stage} className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-md text-sm font-medium">
-                                {stage}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {signal.criteria?.information_platforms && signal.criteria.information_platforms.length > 0 && (
-                        <div>
-                          <div className="flex items-center mb-2">
-                            <Globe className="w-5 h-5 text-purple-600 mr-2" />
-                            <span className="font-semibold text-slate-700">Platforms</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {signal.criteria.information_platforms.map((platform) => (
-                              <span key={platform} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-md text-sm font-medium">
-                                {platform}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {signal.criteria?.target_people_criteria && (
-                        <div>
-                          <div className="flex items-center mb-2">
-                            <Users className="w-5 h-5 text-orange-600 mr-2" />
-                            <span className="font-semibold text-slate-700">Target People</span>
-                          </div>
-                          <p className="text-slate-600 leading-relaxed bg-orange-50 p-3 rounded-md">
-                            {signal.criteria.target_people_criteria}
-                          </p>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
               </div>
@@ -619,7 +555,7 @@ export const SignalsPage: React.FC = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-3">No signals yet</h3>
                 <p className="text-slate-600 mb-8 max-w-lg mx-auto leading-relaxed">
-                  Start by generating AI-powered signals or create custom signals to identify high-intent leads automatically
+                  Start by generating AI-powered signals or create custom signals to identify high-intent prospects automatically
                 </p>
               </div>
             )}
@@ -634,7 +570,7 @@ export const SignalsPage: React.FC = () => {
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-3">No ICP Profiles</h2>
           <p className="text-slate-600 mb-8 max-w-lg mx-auto leading-relaxed">
-            Create an ICP profile first to start generating powerful lead signals
+            Create an ICP profile first to start generating powerful signals
           </p>
           <button
             onClick={() => window.location.href = '#settings'}
@@ -676,13 +612,85 @@ export const SignalsPage: React.FC = () => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Generated Criteria</h3>
                 <div className="space-y-2">
-                  {generatedCriteria.map((criteria, index) => (
-                    <div key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-gray-700">{criteria}</p>
+                  {MOCK_GENERATED_CRITERIA.map((criteria, index) => (
+                    <div 
+                      key={index} 
+                      onClick={() => toggleCriteriaSelection(criteria)}
+                      className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
+                        selectedCriteria.includes(criteria)
+                          ? 'bg-blue-50 border-blue-200 text-blue-800'
+                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm">{criteria}</p>
+                        {selectedCriteria.includes(criteria) && (
+                          <Check className="w-4 h-4 text-blue-600" />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Custom Criteria */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Custom Criteria</h3>
+                <div className="flex items-center space-x-2 mb-3">
+                  <input
+                    type="text"
+                    value={newCriteriaInput}
+                    onChange={(e) => setNewCriteriaInput(e.target.value)}
+                    placeholder="Add custom criteria..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomCriteria())}
+                  />
+                  <button
+                    onClick={addCustomCriteria}
+                    disabled={!newCriteriaInput.trim()}
+                    className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors text-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {customCriteria.length > 0 && (
+                  <div className="space-y-2">
+                    {customCriteria.map((criteria, index) => (
+                      <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-green-800">{criteria}</p>
+                          <button
+                            onClick={() => removeCustomCriteria(criteria)}
+                            className="text-green-600 hover:text-green-800"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Selected Summary */}
+              {(selectedCriteria.length > 0 || customCriteria.length > 0) && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">
+                    Selected Criteria ({selectedCriteria.length + customCriteria.length})
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {[...selectedCriteria, ...customCriteria].map((criteria, index) => (
+                      <span
+                        key={index}
+                        className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium"
+                      >
+                        {criteria}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -695,13 +703,16 @@ export const SignalsPage: React.FC = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    // Handle signal generation
-                    setShowGeneratePanel(false);
-                  }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all duration-200"
+                  onClick={handleCreateSignal}
+                  disabled={isSaving || (selectedCriteria.length === 0 && customCriteria.length === 0)}
+                  className="flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-all duration-200"
                 >
-                  Generate Signals
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
+                  )}
+                  {isSaving ? 'Creating...' : 'Create Signal'}
                 </button>
               </div>
             </div>
