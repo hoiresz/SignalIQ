@@ -124,10 +124,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signup = async (email: string, password: string, firstName: string, lastName: string) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           firstName,
           lastName,
@@ -139,6 +140,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setAuthState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
+
+    // Don't automatically sign in - wait for email confirmation
+    setAuthState(prev => ({ ...prev, isLoading: false }));
   };
 
   const logout = async () => {

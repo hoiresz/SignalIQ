@@ -1,10 +1,27 @@
 import React, { useState } from 'react';
-import { Brain, Zap, Target, TrendingUp } from 'lucide-react';
+import { Brain, Zap, Target, TrendingUp, Mail } from 'lucide-react';
 import { LoginForm } from './LoginForm';
 import { SignupForm } from './SignupForm';
+import { EmailConfirmationForm } from './EmailConfirmationForm';
 
 export const AuthPage: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [authStep, setAuthStep] = useState<'login' | 'signup' | 'confirm'>('login');
+  const [pendingEmail, setPendingEmail] = useState('');
+
+  const handleSignupSuccess = (email: string) => {
+    setPendingEmail(email);
+    setAuthStep('confirm');
+  };
+
+  const handleConfirmationSuccess = () => {
+    setAuthStep('login');
+    setPendingEmail('');
+  };
+
+  const handleBackToAuth = () => {
+    setAuthStep('login');
+    setPendingEmail('');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 flex items-center justify-center p-4">
@@ -71,10 +88,19 @@ export const AuthPage: React.FC = () => {
 
         {/* Right side - Auth forms */}
         <div className="w-full lg:w-2/5 p-12 flex items-center justify-center">
-          {isLogin ? (
-            <LoginForm onToggleMode={() => setIsLogin(false)} />
+          {authStep === 'login' ? (
+            <LoginForm onToggleMode={() => setAuthStep('signup')} />
+          ) : authStep === 'signup' ? (
+            <SignupForm 
+              onToggleMode={() => setAuthStep('login')} 
+              onSignupSuccess={handleSignupSuccess}
+            />
           ) : (
-            <SignupForm onToggleMode={() => setIsLogin(true)} />
+            <EmailConfirmationForm 
+              email={pendingEmail}
+              onConfirmationSuccess={handleConfirmationSuccess}
+              onBackToAuth={handleBackToAuth}
+            />
           )}
         </div>
       </div>

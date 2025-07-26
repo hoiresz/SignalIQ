@@ -4,9 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 
 interface SignupFormProps {
   onToggleMode: () => void;
+  onSignupSuccess: (email: string) => void;
 }
 
-export const SignupForm: React.FC<SignupFormProps> = ({ onToggleMode }) => {
+export const SignupForm: React.FC<SignupFormProps> = ({ onToggleMode, onSignupSuccess }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -39,6 +40,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onToggleMode }) => {
 
     try {
       await signup(formData.email, formData.password, formData.firstName, formData.lastName);
+      onSignupSuccess(formData.email);
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
     }
