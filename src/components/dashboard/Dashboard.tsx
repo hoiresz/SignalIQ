@@ -175,7 +175,6 @@ export const Dashboard: React.FC = () => {
     setShowNewTableModal(true);
   };
 
-  const handleCreateTable = async (name: string, description: string, tableType: 'companies' | 'people' | 'custom') => {
   const handleCreateTable = async (name: string, description: string, tableType: 'companies' | 'people' | 'custom', enrichments: string[]) => {
     try {
       const newTable = await apiClient.createLeadTableWithEnrichments(name, description, tableType, enrichments);
