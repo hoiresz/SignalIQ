@@ -74,54 +74,20 @@ export const SignalsPage: React.FC = () => {
   const generateAISignals = async () => {
     if (!selectedIcpId) return;
 
-    setIsGenerating(true);
-    try {
-      // Mock signal generation for now
-      const mockSignals = [
-        {
-          name: "Companies hiring marketing specialists",
-          description: "Companies posting marketing job openings in the last 3 months",
-          criteria: {
-            signal_description: "Job postings on LinkedIn for marketing roles",
-            company_sizes: ["51-200", "201-500"],
-            information_platforms: ["LinkedIn", "Company Websites"]
-          }
-        },
-        {
-          name: "SaaS companies with recent funding",
-          description: "SaaS companies that raised funding in the last 6 months",
-          criteria: {
-            signal_description: "Recent funding announcements and press releases",
-            funding_stages: ["Series A", "Series B"],
-            information_platforms: ["Crunchbase", "News Articles"]
-          }
-        }
-      ];
-      
-      // Save generated signals to database
-      const signalsToInsert = mockSignals.map(signal => ({
-        user_id: user!.id,
-        icp_id: selectedIcpId,
-        name: signal.name,
-        description: signal.description,
-        signal_type: 'ai_generated' as const,
-        criteria: signal.criteria,
-        is_active: true
-      }));
-
-      // Save to Supabase
-      for (const signalData of signalsToInsert) {
-        await supabase
-          .from('lead_signals')
-          .insert(signalData);
-      }
-
-      await loadData();
-    } catch (error) {
-      console.error('Error generating signals:', error);
-    } finally {
-      setIsGenerating(false);
-    }
+    // Generate mock criteria
+    const mockCriteria = [
+      "posted on LinkedIn about SEO",
+      "has job positions open on their website", 
+      "company is located in the US",
+      "mentioned AI or automation in recent posts",
+      "has raised funding in the last 12 months",
+      "hiring for engineering roles",
+      "attended recent industry conferences",
+      "published content about digital transformation"
+    ];
+    
+    setGeneratedCriteria(mockCriteria);
+    setShowGeneratePanel(true);
   };
 
   const handleSaveSignal = async (signal: Partial<LeadSignal>) => {
