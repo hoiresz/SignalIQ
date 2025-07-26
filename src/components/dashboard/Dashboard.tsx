@@ -6,7 +6,7 @@ import { ChatInput } from '../chat/ChatInput';
 import { LeadsTable } from '../leads/LeadsTable';
 import { SignalsPage } from '../signals/SignalsPage';
 import { SettingsPage } from '../settings/SettingsPage';
-import { NewLeadTableModal } from './NewLeadTableModal';
+import { NewLeadTablePanel } from './NewLeadTablePanel';
 import { Message, Lead, Conversation, User } from '../../types';
 import { generateMockResponse } from '../../utils/mockAI';
 import { exportLeadsToCSV } from '../../utils/csvExport';
@@ -49,7 +49,7 @@ export const Dashboard: React.FC = () => {
   const [activeLeadTableId, setActiveLeadTableId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<ActiveTab>('leads');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [showNewTableModal, setShowNewTableModal] = useState(false);
+  const [showNewTablePanel, setShowNewTablePanel] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -172,12 +172,20 @@ export const Dashboard: React.FC = () => {
   const handleNewLeadTable = async () => {
     if (!user) return;
 
-    setShowNewTableModal(true);
+    setShowNewTablePanel(true);
   };
 
-  const handleCreateTable = async (name: string, description: string, tableType: 'companies' | 'people' | 'custom', enrichments: string[]) => {
+  const handleCreateTable = async (searchQuery: string, tableType: 'companies' | 'people' | 'custom', customType: string, enrichments: string[]) => {
     try {
-      const newTable = await apiClient.createLeadTableWithEnrichments(name, description, tableType, enrichments);
+      // Generate table name based on search query and type
+      const tableName = generateTableName(searchQuery, tableType, customType);
+      
+      const newTable = await apiClient.createLeadTableWithEnrichments(
+        tableName, 
+        searchQuery, 
+        tableType, 
+        enrichments
+      );
 
       setConversation({
         id: newTable.id,
@@ -191,107 +199,16 @@ export const Dashboard: React.FC = () => {
       
       // Reload tables list
       await loadLeadTables();
-      setShowNewTableModal(false);
+      setShowNewTablePanel(false);
     } catch (error) {
       console.error('Error creating new lead table:', error);
     }
   };
 
-  const NewTableModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onCreate: (name: string, description: string, tableType: 'companies' | 'people' | 'custom') => void;
-  }> = ({ isOpen, onClose, onCreate }) => {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [tableType, setTableType] = useState<'companies' | 'people' | 'custom'>('companies');
-
-    if (!isOpen) return null;
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (name.trim()) {
-        onCreate(name.trim(), description.trim(), tableType);
-        setName('');
-        setDescription('');
-        setTableType('companies');
-      }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Create New Lead Table</h3>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Table Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., SaaS Companies, Tech Executives"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of this lead table..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Table Type
-              </label>
-              <select
-                value={tableType}
-                onChange={(e) => setTableType(e.target.value as 'companies' | 'people' | 'custom')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="companies">Companies</option>
-                <option value="people">People</option>
-                <option value="custom">Custom</option>
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                {tableType === 'companies' && 'Default columns: Name, Website, Description, Industry, Location'}
-                {tableType === 'people' && 'Default columns: Name, Job Title, Company, LinkedIn, Email'}
-                {tableType === 'custom' && 'Default columns: Name, Description, URL'}
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
-                Create Table
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
+  const generateTableName = (searchQuery: string, tableType: 'companies' | 'people' | 'custom', customType: string): string => {
+    const typeLabel = tableType === 'custom' ? customType : tableType;
+    const queryWords = searchQuery.split(' ').slice(0, 3).join(' ');
+    return `${queryWords} - ${typeLabel}`.substring(0, 50);
   };
 
   if (isInitializing) {
@@ -492,9 +409,9 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
-      <NewTableModal
-        isOpen={showNewTableModal}
-        onClose={() => setShowNewTableModal(false)}
+      <NewLeadTablePanel
+        isOpen={showNewTablePanel}
+        onClose={() => setShowNewTablePanel(false)}
         onCreate={handleCreateTable}
       />
     </div>
