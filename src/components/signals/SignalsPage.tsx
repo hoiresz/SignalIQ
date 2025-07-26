@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Plus, Trash2, Edit3, Loader2, Save, X, Sparkles, Target, Building2, Users, DollarSign, MapPin, User, Globe, Lightbulb, Search } from 'lucide-react';
+import { Zap, Plus, Trash2, Edit3, Loader2, Save, X, Sparkles, Target, Building2, Users, DollarSign, MapPin, User, Globe, Lightbulb, Search, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { LeadSignal, IdealCustomerProfile } from '../../types';
@@ -642,6 +642,70 @@ export const SignalsPage: React.FC = () => {
           >
             Go to Settings
           </button>
+        </div>
+      )}
+
+      {/* Generate Signals Side Panel */}
+      {showGeneratePanel && (
+        <div className="fixed inset-0 z-50 flex">
+          <div 
+            className="flex-1 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={() => setShowGeneratePanel(false)}
+          />
+          
+          <div className="w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-out flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <button
+                onClick={() => setShowGeneratePanel(false)}
+                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Generate AI Signals</h2>
+                <p className="text-gray-600">AI will generate relevant signals based on your ICP profile</p>
+              </div>
+
+              {/* Generated Criteria */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Generated Criteria</h3>
+                <div className="space-y-2">
+                  {generatedCriteria.map((criteria, index) => (
+                    <div key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-gray-700">{criteria}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setShowGeneratePanel(false)}
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // Handle signal generation
+                    setShowGeneratePanel(false);
+                  }}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all duration-200"
+                >
+                  Generate Signals
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
