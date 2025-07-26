@@ -129,7 +129,6 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({ leads, onExportCSV, tabl
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search leads..."
             placeholder={`Search ${getDisplayName(tableType, true)}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -142,50 +141,8 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({ leads, onExportCSV, tabl
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-auto">
           {leads.length === 0 ? (
-            // Empty state with table structure
-            <div className="h-full">
-              <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10">
-                  <tr className="bg-gray-50 border-b-2 border-gray-200">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200 border-l border-gray-200 min-w-[200px]">
-                      <div className="flex items-center">
-                        <User className="w-3 h-3 mr-2 text-gray-500" />
-                        <span>Name</span>
-                      </div>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[150px]">
-                      Description
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[150px]">
-                      URL
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Empty rows to show table structure */}
-                  {Array.from({ length: 10 }).map((_, index) => (
-                    <tr key={index} className={`border-b border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                      <td className="px-4 py-3 border-r border-gray-200 border-l border-gray-200 min-w-[200px] h-12"></td>
-                      <td className="px-4 py-3 border-r border-gray-200 min-w-[150px] h-12"></td>
-                      <td className="px-4 py-3 border-r border-gray-200 min-w-[150px] h-12"></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {/* Overlay message */}
-              <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
-                <div className="text-center py-16">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Search className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">No {getDisplayName(tableType, true)} yet</h3>
-                  <p className="text-gray-600 max-w-md mx-auto leading-relaxed">
-                    Start by searching for {getDisplayName(tableType, true)} that match your criteria using the search panel.
-                  </p>
-                </div>
-              </div>
-            </div>
+            // Empty state - return null to let Dashboard handle it
+            null
           ) : (
             // Table with data
             <table className="w-full border-collapse">
