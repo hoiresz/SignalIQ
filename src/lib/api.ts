@@ -129,6 +129,7 @@ class ApiClient {
   }
 
   async createLeadTable(name: string, description?: string, tableType?: 'companies' | 'people' | 'custom'): Promise<any> {
+  }
   async createLeadTableWithEnrichments(name: string, description: string, tableType: 'companies' | 'people' | 'custom', enrichments: string[]): Promise<any> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
