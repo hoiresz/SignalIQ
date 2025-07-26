@@ -24,6 +24,7 @@ export const SignalsPage: React.FC = () => {
   const [icpProfiles, setIcpProfiles] = useState<IdealCustomerProfile[]>([]);
   const [editingSignal, setEditingSignal] = useState<LeadSignal | null>(null);
   const [showNewSignalForm, setShowNewSignalForm] = useState(false);
+  const [showEditPanel, setShowEditPanel] = useState(false);
   const [selectedIcpId, setSelectedIcpId] = useState<string>('');
   const [selectedCriteria, setSelectedCriteria] = useState<string[]>([]);
   const [customCriteria, setCustomCriteria] = useState<string[]>([]);
@@ -141,7 +142,6 @@ export const SignalsPage: React.FC = () => {
             name: signal.name,
             description: signal.description,
             criteria: signal.criteria,
-            is_active: signal.is_active,
             status: signal.status || 'deployed'
           })
           .eq('id', signal.id);
@@ -154,16 +154,15 @@ export const SignalsPage: React.FC = () => {
             icp_id: selectedIcpId,
             name: signal.name,
             description: signal.description || '',
-            signal_type: 'custom',
             status: 'deployed',
-            criteria: signal.criteria || {},
-            is_active: signal.is_active ?? true
+            criteria: signal.criteria || {}
           });
       }
 
       await loadData();
       setEditingSignal(null);
       setShowNewSignalForm(false);
+      setShowEditPanel(false);
     } catch (error) {
       console.error('Error saving signal:', error);
     } finally {
@@ -186,30 +185,33 @@ export const SignalsPage: React.FC = () => {
     }
   };
 
-  const toggleSignalActive = async (signalId: string, isActive: boolean) => {
+  const cancelSignal = async (signalId: string) => {
+    if (!confirm('Are you sure you want to cancel this signal?')) return;
+
     try {
       await supabase
         .from('lead_signals')
-        .update({ is_active: isActive })
+        .update({ status: 'completed' })
         .eq('id', signalId);
 
       await loadData();
     } catch (error) {
-      console.error('Error updating signal:', error);
+      console.error('Error cancelling signal:', error);
     }
   };
 
-  const updateSignalStatus = async (signalId: string, status: 'deployed' | 'searching' | 'completed') => {
-    try {
-      await supabase
-        .from('lead_signals')
-        .update({ status })
-        .eq('id', signalId);
-
-      await loadData();
-    } catch (error) {
-      console.error('Error updating signal status:', error);
+  const handleEditSignal = (signal: LeadSignal) => {
+    setEditingSignal(signal);
+    // Populate the criteria from the signal
+    if (signal.criteria?.signal_criteria) {
+      const allCriteria = signal.criteria.signal_criteria;
+      const generatedCriteria = MOCK_GENERATED_CRITERIA.filter(c => allCriteria.includes(c));
+      const customCriteria = allCriteria.filter(c => !MOCK_GENERATED_CRITERIA.includes(c));
+      
+      setSelectedCriteria(generatedCriteria);
+      setCustomCriteria(customCriteria);
     }
+    setShowEditPanel(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -229,6 +231,7 @@ export const SignalsPage: React.FC = () => {
     signal: Partial<LeadSignal>;
     onSave: (signal: Partial<LeadSignal>) => void;
     onCancel: () => void;
+    isEdit?: boolean;
   }> = ({ signal, onSave, onCancel }) => {
     const [formData, setFormData] = useState<Partial<LeadSignal>>({
       ...signal,
@@ -236,18 +239,24 @@ export const SignalsPage: React.FC = () => {
       status: signal.status || 'deployed'
     });
 
-    return (
-      <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-6 space-y-6 border border-slate-200 shadow-md">
-        <div className="border-b border-slate-200 pb-4">
-          <h3 className="text-lg font-bold text-slate-900 mb-1">
-            {signal.id ? 'Edit Signal' : 'Create New Signal'}
-          </h3>
-          <p className="text-slate-600 text-sm">Define the criteria for identifying potential prospects</p>
-        </div>
+    const handleSave = () => {
+      const allCriteria = [...selectedCriteria, ...customCriteria];
+      const updatedSignal = {
+        ...formData,
+        criteria: {
+          signal_criteria: allCriteria
+        }
+      };
+      onSave(updatedSignal);
+    };
 
-        <div className="space-y-4">
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Signal Details</h3>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Signal Name *
             </label>
             <input
@@ -255,12 +264,12 @@ export const SignalsPage: React.FC = () => {
               value={formData.name || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g., Companies hiring marketing specialists"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Description
             </label>
             <textarea
@@ -268,44 +277,119 @@ export const SignalsPage: React.FC = () => {
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Describe what this signal identifies and why it's valuable..."
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none bg-white shadow-sm text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Status
-            </label>
-            <select
-              value={formData.status || 'deployed'}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'deployed' | 'searching' | 'completed' }))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm text-sm"
-            >
-              <option value="deployed">Deployed</option>
-              <option value="searching">Searching</option>
-              <option value="completed">Completed</option>
-            </select>
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
+        {/* Generated Criteria */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Generated Criteria</h3>
+          <div className="space-y-2">
+            {MOCK_GENERATED_CRITERIA.map((criteria, index) => (
+              <div 
+                key={index} 
+                onClick={() => toggleCriteriaSelection(criteria)}
+                className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
+                  selectedCriteria.includes(criteria)
+                    ? 'bg-blue-50 border-blue-200 text-blue-800'
+                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm">{criteria}</p>
+                  {selectedCriteria.includes(criteria) && (
+                    <Check className="w-4 h-4 text-blue-600" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Criteria */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Custom Criteria</h3>
+          <div className="flex items-center space-x-2 mb-3">
+            <input
+              type="text"
+              value={newCriteriaInput}
+              onChange={(e) => setNewCriteriaInput(e.target.value)}
+              placeholder="Add custom criteria..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomCriteria())}
+            />
+            <button
+              type="button"
+              onClick={addCustomCriteria}
+              disabled={!newCriteriaInput.trim()}
+              className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors text-sm"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
+          {customCriteria.length > 0 && (
+            <div className="space-y-2">
+              {customCriteria.map((criteria, index) => (
+                <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-green-800">{criteria}</p>
+                    <button
+                      type="button"
+                      onClick={() => removeCustomCriteria(criteria)}
+                      className="text-green-600 hover:text-green-800"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Selected Summary */}
+        {(selectedCriteria.length > 0 || customCriteria.length > 0) && (
+          <div>
+            <h4 className="font-semibold text-blue-900 mb-2">
+              Selected Criteria ({selectedCriteria.length + customCriteria.length})
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {[...selectedCriteria, ...customCriteria].map((criteria, index) => (
+                <span
+                  key={index}
+                  className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium"
+                >
+                  {criteria}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
           <button
+            type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition-colors text-sm"
+            className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
           >
             Cancel
           </button>
           <button
-            onClick={() => onSave(formData)}
-            disabled={isSaving || !formData.name?.trim()}
-            className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-lg font-medium transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg text-sm"
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || !formData.name?.trim() || (selectedCriteria.length === 0 && customCriteria.length === 0)}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-all duration-200 disabled:cursor-not-allowed"
           >
             {isSaving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
             ) : (
-              <Save className="w-4 h-4 mr-2" />
+              signal.id ? 'Update Signal' : 'Create Signal'
             )}
-            {isSaving ? 'Saving...' : 'Save Signal'}
           </button>
         </div>
       </div>
@@ -452,99 +536,72 @@ export const SignalsPage: React.FC = () => {
             {/* Existing Signals */}
             {filteredSignals.map((signal) => (
               <div key={signal.id}>
-                {editingSignal?.id === signal.id ? (
-                  <SignalForm
-                    signal={editingSignal}
-                    onSave={handleSaveSignal}
-                    onCancel={() => setEditingSignal(null)}
-                  />
-                ) : (
-                  <div className="border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-white">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <h3 className="text-lg font-semibold text-slate-900 mr-3">{signal.name}</h3>
-                          <div className="flex items-center space-x-3">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                              signal.signal_type === 'ai_generated'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {signal.signal_type === 'ai_generated' ? (
-                                <>
-                                  <Sparkles className="w-3 h-3 mr-1" />
-                                  AI Generated
-                                </>
-                              ) : (
-                                <>
-                                  <User className="w-3 h-3 mr-1" />
-                                  Custom
-                                </>
-                              )}
-                            </span>
-                            <select
-                              value={signal.status || 'deployed'}
-                              onChange={(e) => updateSignalStatus(signal.id, e.target.value as 'deployed' | 'searching' | 'completed')}
-                              className={`px-3 py-1 rounded-full text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(signal.status || 'deployed')}`}
+                <div className="border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-white">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <h3 className="text-lg font-semibold text-slate-900 mr-3">{signal.name}</h3>
+                        <div className="flex items-center space-x-3">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(signal.status || 'deployed')}`}>
+                            {signal.status === 'searching' && (
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            )}
+                            {signal.status === 'deployed' && 'Deployed'}
+                            {signal.status === 'searching' && 'Searching'}
+                            {signal.status === 'completed' && 'Completed'}
+                          </span>
+                          {signal.status === 'searching' && (
+                            <button
+                              onClick={() => cancelSignal(signal.id)}
+                              className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium hover:bg-red-200 transition-colors"
                             >
-                              <option value="deployed">Deployed</option>
-                              <option value="searching">Searching</option>
-                              <option value="completed">Completed</option>
-                            </select>
-                            <label className="flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={signal.is_active}
-                                onChange={(e) => toggleSignalActive(signal.id, e.target.checked)}
-                                className="mr-2 rounded text-blue-600 focus:ring-blue-500"
-                              />
-                              <span className="font-medium text-slate-600">Active</span>
-                            </label>
-                          </div>
+                              Cancel
+                            </button>
+                          )}
                         </div>
-                        {signal.description && (
-                          <p className="text-slate-600 mb-4 leading-relaxed">{signal.description}</p>
-                        )}
                       </div>
-                      <div className="flex items-center space-x-1 ml-4">
-                        <button
-                          onClick={() => setEditingSignal(signal)}
-                          className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
-                          title="Edit signal"
-                        >
-                          <Edit3 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSignal(signal.id)}
-                          className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
-                          title="Delete signal"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                      {signal.description && (
+                        <p className="text-slate-600 mb-4 leading-relaxed">{signal.description}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-1 ml-4">
+                      <button
+                        onClick={() => handleEditSignal(signal)}
+                        className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                        title="Edit signal"
+                      >
+                        <Edit3 className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSignal(signal.id)}
+                        className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
+                        title="Delete signal"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Signal Criteria */}
+                  {signal.criteria?.signal_criteria && Array.isArray(signal.criteria.signal_criteria) && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-200">
+                      <div className="flex items-center mb-3">
+                        <Zap className="w-5 h-5 text-orange-600 mr-2" />
+                        <span className="font-semibold text-slate-700">Signal Criteria</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {signal.criteria.signal_criteria.map((criteria, index) => (
+                          <span
+                            key={index}
+                            className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-medium"
+                          >
+                            {criteria}
+                          </span>
+                        ))}
                       </div>
                     </div>
-
-                    {/* Signal Criteria */}
-                    {signal.criteria?.signal_criteria && Array.isArray(signal.criteria.signal_criteria) && (
-                      <div className="mb-6 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-slate-200">
-                        <div className="flex items-center mb-3">
-                          <Zap className="w-5 h-5 text-orange-600 mr-2" />
-                          <span className="font-semibold text-slate-700">Signal Criteria</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {signal.criteria.signal_criteria.map((criteria, index) => (
-                            <span
-                              key={index}
-                              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-medium"
-                            >
-                              {criteria}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
 
@@ -715,6 +772,54 @@ export const SignalsPage: React.FC = () => {
                   {isSaving ? 'Creating...' : 'Create Signal'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Signal Side Panel */}
+      {showEditPanel && editingSignal && (
+        <div className="fixed inset-0 z-50 flex">
+          <div 
+            className="flex-1 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={() => {
+              setShowEditPanel(false);
+              setEditingSignal(null);
+              setSelectedCriteria([]);
+              setCustomCriteria([]);
+            }}
+          />
+          
+          <div className="w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-out flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <button
+                onClick={() => {
+                  setShowEditPanel(false);
+                  setEditingSignal(null);
+                  setSelectedCriteria([]);
+                  setCustomCriteria([]);
+                }}
+                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <SignalForm
+                signal={editingSignal}
+                onSave={handleSaveSignal}
+                onCancel={() => {
+                  setShowEditPanel(false);
+                  setEditingSignal(null);
+                  setSelectedCriteria([]);
+                  setCustomCriteria([]);
+                }}
+                isEdit={true}
+              />
             </div>
           </div>
         </div>

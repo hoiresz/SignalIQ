@@ -66,16 +66,10 @@ export interface LeadSignal {
   icp_id: string;
   name: string;
   description: string;
-  signal_type: 'ai_generated' | 'custom';
   status: 'deployed' | 'searching' | 'completed';
   criteria: {
-    company_sizes?: string[];
-    funding_stages?: string[];
-    target_people_criteria?: string;
-    signal_description?: string;
     signal_criteria?: string[];
   };
-  is_active: boolean;
   created_at: string;
   updated_at: string;
 }

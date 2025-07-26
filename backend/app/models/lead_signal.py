@@ -7,12 +7,6 @@ import enum
 from .base import Base
 
 
-class SignalType(str, enum.Enum):
-    """Signal type enumeration"""
-    AI_GENERATED = "ai_generated"
-    CUSTOM = "custom"
-
-
 class SignalStatus(str, enum.Enum):
     """Signal status enumeration"""
     DEPLOYED = "deployed"
@@ -29,10 +23,8 @@ class LeadSignal(Base):
     icp_id = Column(UUID(as_uuid=True), ForeignKey("ideal_customer_profiles.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    signal_type = Column(Enum(SignalType), default=SignalType.CUSTOM, nullable=False, index=True)
     status = Column(Enum(SignalStatus), default=SignalStatus.DEPLOYED, nullable=False, index=True)
     criteria = Column(JSONB, default={}, nullable=True)
-    is_active = Column(Boolean, default=True, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -41,4 +33,3 @@ class LeadSignal(Base):
     icp = relationship("IdealCustomerProfile", back_populates="signals")
 
     def __repr__(self):
-        return f"<Signal(id={self.id}, name={self.name}, signal_type={self.signal_type}, status={self.status})>"
