@@ -50,7 +50,7 @@ export interface IdealCustomerProfile {
   user_id: string;
   name: string;
   solution_products: string;
-  target_region: string;
+  target_region: string[];
   target_customers: string;
   company_sizes: string[];
   funding_stages: string[];

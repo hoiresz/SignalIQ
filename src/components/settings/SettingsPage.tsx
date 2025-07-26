@@ -5,6 +5,34 @@ import { useAuth } from '../../contexts/AuthContext';
 import { UserProfile, IdealCustomerProfile } from '../../types';
 import { CompanyWebsiteSection } from './CompanyWebsiteSection';
 
+const COUNTRIES = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia', 'Australia',
+  'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium',
+  'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei',
+  'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada', 'Cape Verde',
+  'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
+  'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic',
+  'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Ethiopia', 'Fiji',
+  'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada',
+  'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana', 'Haiti', 'Honduras', 'Hungary', 'Iceland',
+  'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan',
+  'Kazakhstan', 'Kenya', 'Kiribati', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho',
+  'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia',
+  'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia',
+  'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia',
+  'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea',
+  'North Macedonia', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea',
+  'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda',
+  'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino',
+  'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone',
+  'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea',
+  'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
+  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago',
+  'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates',
+  'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela',
+  'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
+];
+
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -223,6 +251,81 @@ export const SettingsPage: React.FC = () => {
     );
   };
 
+  const CountrySelector: React.FC<{
+    selectedCountries: string[];
+    onCountriesChange: (countries: string[]) => void;
+  }> = ({ selectedCountries, onCountriesChange }) => {
+    const [countrySearch, setCountrySearch] = useState('');
+    const [showDropdown, setShowDropdown] = useState(false);
+
+    const filteredCountries = COUNTRIES.filter(country =>
+      country.toLowerCase().includes(countrySearch.toLowerCase()) &&
+      !selectedCountries.includes(country)
+    );
+
+    const handleCountrySelect = (country: string) => {
+      onCountriesChange([...selectedCountries, country]);
+      setCountrySearch('');
+      setShowDropdown(false);
+    };
+
+    const removeCountry = (country: string) => {
+      onCountriesChange(selectedCountries.filter(c => c !== country));
+    };
+
+    return (
+      <div className="space-y-3">
+        <div className="relative">
+          <input
+            type="text"
+            value={countrySearch}
+            onChange={(e) => {
+              setCountrySearch(e.target.value);
+              setShowDropdown(true);
+            }}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+            placeholder="Search and select countries..."
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+          />
+          
+          {showDropdown && filteredCountries.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
+              {filteredCountries.slice(0, 10).map((country) => (
+                <button
+                  key={country}
+                  onClick={() => handleCountrySelect(country)}
+                  className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-sm border-b border-slate-100 last:border-b-0"
+                >
+                  {country}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {selectedCountries.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {selectedCountries.map((country) => (
+              <span
+                key={country}
+                className="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium"
+              >
+                {country}
+                <button
+                  onClick={() => removeCountry(country)}
+                  className="ml-2 text-blue-600 hover:text-blue-800 font-bold"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const IcpForm: React.FC<{
     icp: Partial<IdealCustomerProfile>;
     onSave: (icp: Partial<IdealCustomerProfile>) => void;
@@ -261,14 +364,11 @@ export const SettingsPage: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-               Target Region *
+                Target Region *
               </label>
-              <textarea
-               value={formData.target_region || ''}
-               onChange={(e) => setFormData(prev => ({ ...prev, target_region: e.target.value }))}
-                placeholder="Which regions or locations are you targeting?"
-                rows={3}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+              <CountrySelector
+                selectedCountries={formData.target_region || []}
+                onCountriesChange={(countries) => setFormData(prev => ({ ...prev, target_region: countries }))}
               />
             </div>
           </div>
@@ -451,7 +551,20 @@ export const SettingsPage: React.FC = () => {
                     {icp.target_region && (
                       <div>
                         <h4 className="font-semibold text-slate-700 mb-2">Target Region</h4>
-                        <p className="text-slate-600 leading-relaxed">{icp.target_region}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Array.isArray(icp.target_region) ? (
+                            icp.target_region.map((country) => (
+                              <span
+                                key={country}
+                                className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 rounded-md text-sm font-medium"
+                              >
+                                {country}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-slate-600">{icp.target_region}</span>
+                          )}
+                        </div>
                       </div>
                     )}
 
