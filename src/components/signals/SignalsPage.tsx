@@ -25,11 +25,13 @@ export const SignalsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showGeneratePanel, setShowGeneratePanel] = useState(false);
   const [signals, setSignals] = useState<LeadSignal[]>([]);
   const [icpProfiles, setIcpProfiles] = useState<IdealCustomerProfile[]>([]);
   const [editingSignal, setEditingSignal] = useState<LeadSignal | null>(null);
   const [showNewSignalForm, setShowNewSignalForm] = useState(false);
   const [selectedIcpId, setSelectedIcpId] = useState<string>('');
+  const [generatedCriteria, setGeneratedCriteria] = useState<string[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -72,54 +74,20 @@ export const SignalsPage: React.FC = () => {
   const generateAISignals = async () => {
     if (!selectedIcpId) return;
 
-    setIsGenerating(true);
-    try {
-      // Mock signal generation for now
-      const mockSignals = [
-        {
-          name: "Companies hiring marketing specialists",
-          description: "Companies posting marketing job openings in the last 3 months",
-          criteria: {
-            signal_description: "Job postings on LinkedIn for marketing roles",
-            company_sizes: ["51-200", "201-500"],
-            information_platforms: ["LinkedIn", "Company Websites"]
-          }
-        },
-        {
-          name: "SaaS companies with recent funding",
-          description: "SaaS companies that raised funding in the last 6 months",
-          criteria: {
-            signal_description: "Recent funding announcements and press releases",
-            funding_stages: ["Series A", "Series B"],
-            information_platforms: ["Crunchbase", "News Articles"]
-          }
-        }
-      ];
-      
-      // Save generated signals to database
-      const signalsToInsert = mockSignals.map(signal => ({
-        user_id: user!.id,
-        icp_id: selectedIcpId,
-        name: signal.name,
-        description: signal.description,
-        signal_type: 'ai_generated' as const,
-        criteria: signal.criteria,
-        is_active: true
-      }));
-
-      // Save to Supabase
-      for (const signalData of signalsToInsert) {
-        await supabase
-          .from('lead_signals')
-          .insert(signalData);
-      }
-
-      await loadData();
-    } catch (error) {
-      console.error('Error generating signals:', error);
-    } finally {
-      setIsGenerating(false);
-    }
+    // Generate mock criteria
+    const mockCriteria = [
+      "posted on LinkedIn about SEO",
+      "has job positions open on their website", 
+      "company is located in the US",
+      "mentioned AI or automation in recent posts",
+      "has raised funding in the last 12 months",
+      "hiring for engineering roles",
+      "attended recent industry conferences",
+      "published content about digital transformation"
+    ];
+    
+    setGeneratedCriteria(mockCriteria);
+    setShowGeneratePanel(true);
   };
 
   const handleSaveSignal = async (signal: Partial<LeadSignal>) => {
@@ -393,8 +361,8 @@ export const SignalsPage: React.FC = () => {
             <Zap className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Lead Signals</h1>
-            <p className="text-slate-600 mt-2">Generate and manage signals to identify potential leads automatically</p>
+            <h1 className="text-3xl font-bold text-slate-900">Signals</h1>
+            <p className="text-slate-600 mt-2">Generate and manage signals to identify potential prospects automatically</p>
           </div>
         </div>
       </div>
@@ -421,15 +389,11 @@ export const SignalsPage: React.FC = () => {
             </select>
             <button
               onClick={generateAISignals}
-              disabled={!selectedIcpId || isGenerating}
+              disabled={!selectedIcpId}
               className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
             >
-              {isGenerating ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <Lightbulb className="w-5 h-5 mr-2" />
-              )}
-              {isGenerating ? 'Generating...' : 'Generate Signals'}
+              <Lightbulb className="w-5 h-5 mr-2" />
+              Generate Signals
             </button>
           </div>
         </div>
@@ -451,7 +415,7 @@ export const SignalsPage: React.FC = () => {
                     <MapPin className="w-6 h-6 text-emerald-600 mr-3 mt-1 flex-shrink-0" />
                     <div>
                       <span className="font-semibold text-slate-700 block mb-2">Target Region:</span>
-                      <span className="text-slate-600 leading-relaxed text-sm">{selectedIcp.target_region}</span>
+                      <div className="flex flex-wrap gap-2 max-w-md">
                     </div>
                   </div>
                 </div>
@@ -519,7 +483,7 @@ export const SignalsPage: React.FC = () => {
                                   <Sparkles className="w-3 h-3 mr-1" />
                                   AI Generated
                                 </>
-                              ) : (
+                          selectedIcp.target_region.slice(0, 3).map((country) => (
                                 <>
                                   <User className="w-3 h-3 mr-1" />
                                   Custom
@@ -539,6 +503,11 @@ export const SignalsPage: React.FC = () => {
                         </div>
                         {signal.description && (
                           <p className="text-slate-600 mb-4 leading-relaxed">{signal.description}</p>
+                        )}
+                        {Array.isArray(selectedIcp.target_region) && selectedIcp.target_region.length > 3 && (
+                          <span className="text-slate-500 text-sm">
+                            ... +{selectedIcp.target_region.length - 3} more
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center space-x-1 ml-4">
@@ -667,6 +636,70 @@ export const SignalsPage: React.FC = () => {
           >
             Go to Settings
           </button>
+        </div>
+      )}
+
+      {/* Generate Signals Side Panel */}
+      {showGeneratePanel && (
+        <div className="fixed inset-0 z-50 flex">
+          <div 
+            className="flex-1 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={() => setShowGeneratePanel(false)}
+          />
+          
+          <div className="w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-out flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <button
+                onClick={() => setShowGeneratePanel(false)}
+                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Generate AI Signals</h2>
+                <p className="text-gray-600">AI will generate relevant signals based on your ICP profile</p>
+              </div>
+
+              {/* Generated Criteria */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Generated Criteria</h3>
+                <div className="space-y-2">
+                  {generatedCriteria.map((criteria, index) => (
+                    <div key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-gray-700">{criteria}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setShowGeneratePanel(false)}
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // Handle signal generation
+                    setShowGeneratePanel(false);
+                  }}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all duration-200"
+                >
+                  Generate Signals
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -269,7 +269,7 @@ export const Dashboard: React.FC = () => {
 
   const navItems = [
     { id: 'leads' as ActiveTab, label: 'Datasets', icon: Database, description: 'Manage your data' },
-    { id: 'signals' as ActiveTab, label: 'Signals', icon: Zap, description: 'Lead signal management' },
+    { id: 'signals' as ActiveTab, label: 'Signals', icon: Zap, description: 'Signal management' },
     { id: 'settings' as ActiveTab, label: 'Settings', icon: Settings, description: 'Account & ICP settings' },
     { id: 'campaigns' as ActiveTab, label: 'Campaigns', icon: Target, description: 'Coming soon...', disabled: true },
   ];

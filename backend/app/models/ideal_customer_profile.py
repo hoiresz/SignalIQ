@@ -27,7 +27,7 @@ class IdealCustomerProfile(Base):
 
     # Relationships
     user = relationship("User", back_populates="ideal_customer_profiles")
-    lead_signals = relationship("LeadSignal", back_populates="icp", cascade="all, delete-orphan")
+    signals = relationship("LeadSignal", back_populates="icp", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<IdealCustomerProfile(id={self.id}, name={self.name}, user_id={self.user_id})>"

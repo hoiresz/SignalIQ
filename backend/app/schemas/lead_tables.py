@@ -3,22 +3,25 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 
-# Lead Table schemas
-class LeadTableBase(BaseModel):
+# Data Table schemas
+class DataTableBase(BaseModel):
     name: str
     description: Optional[str] = None
+    table_type: Optional[str] = "companies"
+    default_columns: Optional[List[Dict[str, Any]]] = []
 
 
-class LeadTableCreate(LeadTableBase):
+class DataTableCreate(DataTableBase):
     pass
 
 
-class LeadTableUpdate(BaseModel):
+class DataTableUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    table_type: Optional[str] = None
 
 
-class LeadTableResponse(LeadTableBase):
+class DataTableResponse(DataTableBase):
     id: str
     user_id: str
     created_at: datetime
@@ -28,8 +31,8 @@ class LeadTableResponse(LeadTableBase):
         from_attributes = True
 
 
-# Lead Row Data
-class LeadRowData(BaseModel):
+# Data Row Data
+class DataRowData(BaseModel):
     id: str
     entity_type: str
     data: Dict[str, Any]
@@ -40,10 +43,10 @@ class LeadRowData(BaseModel):
         from_attributes = True
 
 
-# Lead Table with Data
-class LeadTableWithData(LeadTableResponse):
+# Data Table with Data
+class DataTableWithData(DataTableResponse):
     columns: List[str]
-    rows: List[LeadRowData]
+    rows: List[DataRowData]
 
     class Config:
         from_attributes = True

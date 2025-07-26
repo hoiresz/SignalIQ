@@ -14,7 +14,7 @@ class SignalType(str, enum.Enum):
 
 
 class LeadSignal(Base):
-    """Lead Signal model - defines criteria for identifying potential leads"""
+    """Signal model - defines criteria for identifying potential prospects"""
     __tablename__ = "lead_signals"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -29,8 +29,8 @@ class LeadSignal(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="lead_signals")
-    icp = relationship("IdealCustomerProfile", back_populates="lead_signals")
+    user = relationship("User", back_populates="signals")
+    icp = relationship("IdealCustomerProfile", back_populates="signals")
 
     def __repr__(self):
-        return f"<LeadSignal(id={self.id}, name={self.name}, signal_type={self.signal_type})>"
+        return f"<Signal(id={self.id}, name={self.name}, signal_type={self.signal_type})>"

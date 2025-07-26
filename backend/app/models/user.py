@@ -22,8 +22,8 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     user_profile = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     ideal_customer_profiles = relationship("IdealCustomerProfile", back_populates="user", cascade="all, delete-orphan")
-    lead_signals = relationship("LeadSignal", back_populates="user", cascade="all, delete-orphan")
-    lead_tables = relationship("LeadTable", back_populates="user", cascade="all, delete-orphan")
+    signals = relationship("LeadSignal", back_populates="user", cascade="all, delete-orphan")
+    data_tables = relationship("LeadTable", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"
