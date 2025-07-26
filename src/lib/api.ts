@@ -128,7 +128,13 @@ class ApiClient {
     }
   }
 
-  async createLeadTable(name: string, description?: string): Promise<any> {
+  async createLeadTable(name: string, description?: string, tableType?: 'companies' | 'people' | 'custom'): Promise<any> {
+    // If tableType is provided, use the new method
+    if (tableType) {
+      return this.createLeadTableWithType(name, description || '', tableType);
+    }
+
+    // Legacy method for backward compatibility
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');

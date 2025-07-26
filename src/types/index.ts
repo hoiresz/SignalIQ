@@ -78,4 +78,16 @@ export interface LeadSignal {
   updated_at: string;
 }
 
+export interface LeadTable {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  table_type: 'companies' | 'people' | 'custom';
+  default_columns: any[];
+  created_at: string;
+  updated_at: string;
+  lead_count?: number;
+}
+
 type ActiveTab = 'leads' | 'settings' | 'campaigns' | 'signals';

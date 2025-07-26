@@ -48,7 +48,7 @@ export const Dashboard: React.FC = () => {
   const [activeLeadTableId, setActiveLeadTableId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<ActiveTab>('leads');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [leadTableSidebarCollapsed, setLeadTableSidebarCollapsed] = useState(false);
+  const [showNewTableModal, setShowNewTableModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -171,11 +171,12 @@ export const Dashboard: React.FC = () => {
   const handleNewLeadTable = async () => {
     if (!user) return;
 
+    setShowNewTableModal(true);
+  };
+
+  const handleCreateTable = async (name: string, description: string, tableType: 'companies' | 'people' | 'custom') => {
     try {
-      const newTable = await apiClient.createLeadTable(
-        `Leads ${new Date().toLocaleDateString()}`,
-        'New lead table'
-      );
+      const newTable = await apiClient.createLeadTable(name, description, tableType);
 
       setConversation({
         id: newTable.id,
@@ -189,9 +190,107 @@ export const Dashboard: React.FC = () => {
       
       // Reload tables list
       await loadLeadTables();
+      setShowNewTableModal(false);
     } catch (error) {
       console.error('Error creating new lead table:', error);
     }
+  };
+
+  const NewTableModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onCreate: (name: string, description: string, tableType: 'companies' | 'people' | 'custom') => void;
+  }> = ({ isOpen, onClose, onCreate }) => {
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [tableType, setTableType] = useState<'companies' | 'people' | 'custom'>('companies');
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (name.trim()) {
+        onCreate(name.trim(), description.trim(), tableType);
+        setName('');
+        setDescription('');
+        setTableType('companies');
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="p-6 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Create New Lead Table</h3>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Table Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., SaaS Companies, Tech Executives"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Brief description of this lead table..."
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Table Type
+              </label>
+              <select
+                value={tableType}
+                onChange={(e) => setTableType(e.target.value as 'companies' | 'people' | 'custom')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="companies">Companies</option>
+                <option value="people">People</option>
+                <option value="custom">Custom</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {tableType === 'companies' && 'Default columns: Name, Website, Description, Industry, Location'}
+                {tableType === 'people' && 'Default columns: Name, Job Title, Company, LinkedIn, Email'}
+                {tableType === 'custom' && 'Default columns: Name, Description, URL'}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Create Table
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
   };
 
   if (isInitializing) {
@@ -328,11 +427,11 @@ export const Dashboard: React.FC = () => {
                     <select
                       value={activeLeadTableId}
                       onChange={(e) => handleLeadTableSelect(e.target.value)}
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm font-medium min-w-[200px]"
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm font-medium min-w-[250px]"
                     >
                       {leadTables.map((table) => (
                         <option key={table.id} value={table.id}>
-                          {table.name} ({conversation.leads.length} leads)
+                          {table.name} - {table.table_type || 'companies'} ({conversation.leads.length} leads)
                         </option>
                       ))}
                     </select>
@@ -391,6 +490,12 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      <NewTableModal
+        isOpen={showNewTableModal}
+        onClose={() => setShowNewTableModal(false)}
+        onCreate={handleCreateTable}
+      />
     </div>
   );
 };
