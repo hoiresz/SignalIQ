@@ -94,7 +94,7 @@ export const NewLeadTablePanel: React.FC<NewLeadTablePanelProps> = ({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Title */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Find your perfect list</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Find your perfect dataset</h2>
           </div>
 
           {/* Table Type Selection */}
