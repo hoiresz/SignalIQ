@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Plus, Trash2, Edit3, Loader2, Save, X, Sparkles, Target, Building2, Users, DollarSign, MapPin, User, Globe, Lightbulb, Search } from 'lucide-react';
+import { Zap, Plus, Trash2, Edit3, Loader2, Save, X, Sparkles, Target, Building2, Users, DollarSign, MapPin, User, Globe, Lightbulb, Search, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { LeadSignal, IdealCustomerProfile } from '../../types';
@@ -416,6 +416,17 @@ export const SignalsPage: React.FC = () => {
                     <div>
                       <span className="font-semibold text-slate-700 block mb-2">Target Region:</span>
                       <div className="flex flex-wrap gap-2 max-w-md">
+                        {selectedIcp.target_region.slice(0, 3).map((country) => (
+                          <span key={country} className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-md text-sm font-medium">
+                            {country}
+                          </span>
+                        ))}
+                        {Array.isArray(selectedIcp.target_region) && selectedIcp.target_region.length > 3 && (
+                          <span className="text-slate-500 text-sm">
+                            ... +{selectedIcp.target_region.length - 3} more
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -483,7 +494,7 @@ export const SignalsPage: React.FC = () => {
                                   <Sparkles className="w-3 h-3 mr-1" />
                                   AI Generated
                                 </>
-                          selectedIcp.target_region.slice(0, 3).map((country) => (
+                              ) : (
                                 <>
                                   <User className="w-3 h-3 mr-1" />
                                   Custom
@@ -503,11 +514,6 @@ export const SignalsPage: React.FC = () => {
                         </div>
                         {signal.description && (
                           <p className="text-slate-600 mb-4 leading-relaxed">{signal.description}</p>
-                        )}
-                        {Array.isArray(selectedIcp.target_region) && selectedIcp.target_region.length > 3 && (
-                          <span className="text-slate-500 text-sm">
-                            ... +{selectedIcp.target_region.length - 3} more
-                          </span>
                         )}
                       </div>
                       <div className="flex items-center space-x-1 ml-4">
