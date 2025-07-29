@@ -110,12 +110,10 @@ export const SignalsPage: React.FC = () => {
           icp_id: selectedIcpId,
           name: signalName,
           description: `Auto-generated signal with ${allCriteria.length} criteria`,
-          signal_type: 'ai_generated',
           status: 'deployed',
           criteria: {
             signal_criteria: allCriteria
-          },
-          is_active: true
+          }
         });
 
       await loadData();
