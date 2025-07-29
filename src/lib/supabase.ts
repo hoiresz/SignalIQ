@@ -219,9 +219,7 @@ export type Database = {
           icp_id: string;
           name: string;
           description: string | null;
-          signal_type: 'ai_generated' | 'custom';
           criteria: Record<string, any>;
-          is_active: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -231,9 +229,7 @@ export type Database = {
           icp_id: string;
           name: string;
           description?: string | null;
-          signal_type?: 'ai_generated' | 'custom';
           criteria?: Record<string, any>;
-          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
