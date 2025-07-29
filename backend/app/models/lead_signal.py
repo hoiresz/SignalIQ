@@ -14,6 +14,12 @@ class SignalStatus(str, enum.Enum):
     COMPLETED = "completed"
 
 
+class SignalType(str, enum.Enum):
+    """Signal type enumeration"""
+    AI_GENERATED = "AI_GENERATED"
+    CUSTOM = "CUSTOM"
+
+
 class LeadSignal(Base):
     """Signal model - defines criteria for identifying potential prospects"""
     __tablename__ = "lead_signals"
@@ -25,6 +31,7 @@ class LeadSignal(Base):
     description = Column(String, nullable=True)
     status = Column(Enum(SignalStatus), default=SignalStatus.DEPLOYED, nullable=False, index=True)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
+    signal_type = Column(Enum(SignalType), default=SignalType.AI_GENERATED, nullable=False, index=True)
     criteria = Column(JSONB, default={}, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

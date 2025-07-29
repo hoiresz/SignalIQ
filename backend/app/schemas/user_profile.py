@@ -60,6 +60,7 @@ class LeadSignalBase(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = "deployed"
     is_active: Optional[bool] = True
+    signal_type: Optional[str] = "AI_GENERATED"
     criteria: Optional[dict] = {}
 
 
