@@ -24,6 +24,7 @@ class LeadSignal(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     status = Column(Enum(SignalStatus), default=SignalStatus.DEPLOYED, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
     criteria = Column(JSONB, default={}, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
